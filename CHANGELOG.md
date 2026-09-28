@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/iurysza/termscope/compare/v0.3.2...v0.3.3) (2026-09-28)
+
+
+### Bug Fixes
+
+* **pick:** match only visible paths that exist ([adce75c](https://github.com/iurysza/termscope/commit/adce75ce3481a7eda512d615ab36ab1a2076e4dc))
+
 ## [0.3.2](https://github.com/iurysza/termscope/compare/v0.3.1...v0.3.2) (2026-09-16)
 
 
