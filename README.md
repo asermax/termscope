@@ -27,6 +27,12 @@ Ctrl-E        →  pick a visible link  →  browser opens it
 
 ## Demo
 
+[![termscope trailer: scan the screen, keep real paths, pick, open in Neovim](./assets/termscope-trailer.jpg)](./assets/termscope-trailer.mp4)
+
+A 21-second trailer. Click the image to play it.
+
+Full walkthrough:
+
 https://github.com/user-attachments/assets/af573bbc-abf9-4947-9ed6-955723b722f5
 
 
@@ -153,6 +159,13 @@ paths plus any visible `http://` / `https://` URLs.
 
 - A path is listed only if it exists on disk in that tree. `file:line` is kept
   and passed to Neovim as `nvim +line path`.
+- Only text that looks like a path counts. Plain words don't match files:
+  `report` in a sentence doesn't list `report.md`. Write `` `README` `` in
+  backticks, or on its own line, to match `README.md`.
+- A bare file name such as `main.py:12` matches only when exactly one file of
+  that name exists in the repo.
+- Mentioning `docs/setup/guide.md` lists that file, not its parent folders.
+- Results keep the order they appear on screen.
 - If no visible file matches, the picker falls back to the full repo listing
   (visible URLs stay first). Indexing `$HOME` is skipped.
 - `termscope.open-links` is URLs only.
