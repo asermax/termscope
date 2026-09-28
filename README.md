@@ -27,13 +27,7 @@ Ctrl-E        →  pick a visible link  →  browser opens it
 
 ## Demo
 
-[![termscope trailer: scan the screen, keep real paths, pick, open in Neovim](./assets/termscope-trailer.jpg)](./assets/termscope-trailer.mp4)
-
-A 21-second trailer. Click the image to play it.
-
-Full walkthrough:
-
-https://github.com/user-attachments/assets/af573bbc-abf9-4947-9ed6-955723b722f5
+https://github.com/user-attachments/assets/12447931-8fa4-441c-a406-a0abc40930ed
 
 
 ## Why
