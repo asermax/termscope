@@ -244,10 +244,18 @@ class TestExtractVisibleCandidates(unittest.TestCase):
         self.assertIn("src/main.py", cands)
 
     def test_md_extension_omission(self):
-        text = "see README for details"
+        text = "see `README` for details"
         repo = ["README.md", "src/main.py"]
         cands = tfp.extract_visible_candidates(text, repo, self.tmp, self.tmp)
         self.assertIn("README.md", cands)
+
+    def test_md_extension_omission_ignores_prose_words(self):
+        # A plain word in a sentence is not a file mention, even if X.md exists.
+        (self.tmp / "report.md").write_text("")
+        text = "see README for details in the research report"
+        repo = ["README.md", "report.md", "src/main.py"]
+        cands = tfp.extract_visible_candidates(text, repo, self.tmp, self.tmp)
+        self.assertEqual(cands, [])
 
     def test_md_extension_omission_needs_a_whole_word(self):
         # "README" inside a longer path is not a mention of the root README.md.
@@ -297,13 +305,93 @@ class TestExtractVisibleCandidates(unittest.TestCase):
         text = "src/utils.py src/main.py README.md"
         repo = ["README.md", "src", "src/main.py", "src/utils.py"]
         cands = tfp.extract_visible_candidates(text, repo, self.tmp, self.tmp, sort="alpha")
-        self.assertEqual(cands, ["README.md", "src", "src/main.py", "src/utils.py"])
+        # Mentioning src/main.py does not also list its parent folder "src".
+        self.assertEqual(cands, ["README.md", "src/main.py", "src/utils.py"])
 
     def test_appearance_sort_is_default(self):
         text = "src/utils.py\nsrc/main.py\nREADME.md"
         repo = ["README.md", "src/main.py", "src/utils.py"]
         cands = tfp.extract_visible_candidates(text, repo, self.tmp, self.tmp)
         self.assertEqual(cands, ["src/utils.py", "src/main.py", "README.md"])
+
+
+class TestExtractVisibleCandidatesAgentScreen(unittest.TestCase):
+    """A real agent summary: prose, shell commands, and many path mentions."""
+
+    EXISTING = [
+        "install.sh",
+        "install-config.json",
+        "AGENTS.md",
+        "ai-artifacts/reports/2026-06-27-visual-artifact-scout-report.md",
+        "ai-artifacts/wtf/2026-06-27-note.md",
+        "ai-artifacts/goals/a/research.md",
+        "ai-artifacts/generated/report.md",
+        "agents/RULES.md",
+        "agents/guides/machine-setup.md",
+        "agents/roles/scout.md",
+        "agents/skills/x/output.md",
+        "docs/setup/visual-artifact.md",
+        "docs/setup/local-web-gateway.md",
+        "effect-research/notes.md",
+        "scripts/runtime-lock.test.mjs",
+    ]
+
+    def setUp(self):
+        import tempfile
+        self._tmp = tempfile.TemporaryDirectory()
+        base = Path(self._tmp.name).resolve()
+        self.home = base / "home"
+        self.root = self.home / "dev" / "personal" / "tools" / "agents"
+        self.tmpdir = base / "tmp"
+        for rel in self.EXISTING:
+            p = self.root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("")
+        (self.home / "dev" / "personal" / "dotfiles").mkdir(parents=True)
+        self.tmpdir.mkdir()
+        (self.tmpdir / "doc.log").write_text("")
+        self._home_patch = patch.dict(os.environ, {"HOME": str(self.home)})
+        self._home_patch.start()
+        fixture = Path(__file__).parent / "fixtures" / "agent-summary-screen.txt"
+        self.text = (
+            fixture.read_text()
+            .replace("{ROOT}", str(self.root))
+            .replace("{TMP}", str(self.tmpdir))
+        )
+        # Mirror fd output: files and every folder in the repo.
+        repo = set()
+        for rel in self.EXISTING:
+            parts = Path(rel).parts
+            for n in range(1, len(parts) + 1):
+                repo.add("/".join(parts[:n]))
+        self.repo = sorted(repo)
+
+    def tearDown(self):
+        self._home_patch.stop()
+        self._tmp.cleanup()
+
+    def test_lists_exactly_the_visible_existing_paths(self):
+        cands = tfp.extract_visible_candidates(self.text, self.repo, self.root, self.root)
+        self.assertEqual(
+            cands,
+            [
+                "~/dev/personal/tools/agents",
+                "ai-artifacts/reports",
+                "ai-artifacts/wtf",
+                "scripts/runtime-lock.test.mjs",
+                "install.sh",
+                str(self.tmpdir / "doc.log"),
+                "install-config.json",
+                "ai-artifacts/reports/2026-06-27-visual-artifact-scout-report.md",
+                "docs/setup/visual-artifact.md",
+                "agents/RULES.md",
+                "~/dev/personal/dotfiles",
+                "agents/guides/machine-setup.md",
+                "docs/setup/local-web-gateway.md",
+                "ai-artifacts",
+                "effect-research",
+            ],
+        )
 
 
 class TestParseTvResult(unittest.TestCase):

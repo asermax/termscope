@@ -1,0 +1,48 @@
+ Install Brag Skill   Apply Personal Profile  +
+⊡ move scratch files and fix paths, staging only these
+cd {ROOT} && git diff --cached --quiet && echo "index clean" && mkdir -p ai-artifacts/reports ai-artifacts/wtf && git mv visual-artifact-scout-report.md ai-artifacts/reports/2026-06-27-visual-artifact-… → done · <1s
+
+ The remaining hits are a historical research report and a test fixture that checks absolute paths are rejected. I'll make the fixture user-neutral, then verify and commit.
+
+⊡ neutralize test path and reread staged doc edits
+cd {ROOT} && git diff --quiet scripts/runtime-lock.test.mjs && sed -i '' 's|"/Users/someone/pi-ext"|"/Users/example/pi-ext"|' scripts/runtime-lock.test.mjs && git add scripts/runtime-lock.test.mjs &&… → done · <1s
+
+⊡ run doctor, commit, confirm user edits untouched
+cd {ROOT} && ./install.sh --doctor --profile personal >{TMP}/doc.log 2>&1; echo "doctor exit=$?"; grep -iE "fail|error" {TMP}/doc.log | head -5; git commit -q -m "chore: tidy root scratch files and home … → done · 24s
+── 22:34 ──────────────────────────────
+
+⊡ check whether doctor failures predate this commit
+cd {ROOT} && git stash list | head -1; D=/tmp/snap$$; git worktree add -q --detach $D HEAD~1 && cp install-config.json $D/ && (cd $D && ./install.sh --doctor --profile personal 2>&1 | grep -E "^fail" |… → done · <1s
+
+ I cleaned up the root scratch files and the hardcoded paths, and committed them as de161a9 chore: tidy root scratch files and home paths.
+
+ Root files:
+ - visual-artifact-scout-report.md moved to ai-artifacts/reports/2026-06-27-visual-artifact-scout-report.md.
+ - WTF.md moved to ai-artifacts/wtf/, using the same dated naming as the other notes there. Its fix is also documented in docs/setup/visual-artifact.md.
+ - I deleted context.md, a scout output from August about changes that are already merged. It's still in git history if you need it. The role files that mention context.md refer to a per-run output file, not this one.
+
+ Hardcoded paths:
+ - agents/RULES.md now uses ~/... paths. The old dotfiles path, ~/projects/my-repos/dotfiles, didn't exist. I changed it to ~/dev/personal/dotfiles, which is where chezmoi says its source is.
+ - agents/guides/machine-setup.md had the same problem: it listed ~/dev/personal/dot-files, which doesn't exist. I corrected it and added a rule to write home paths as ~/....
+ - docs/setup/local-web-gateway.md: the example output now shows $HOME/.local/bin/....
+ - A test in scripts/runtime-lock.test.mjs used your home path as an example of a banned absolute path. It now uses /Users/example/pi-ext, and all 25 tests pass.
+
+ I left the absolute paths in ai-artifacts/ and effect-research/ alone, because they're historical records.
+
+ Checks:
+ - render-agents --check passes.
+
+ - ./install.sh --doctor reports 2 failures:
+     - the settings bundle differs from the current config;
+     - the persistent-agents build is stale.
+
+   Both mean your live install hasn't been re-applied since this session's commits and your uncommitted edits. These file moves and doc edits don't cause either one. ./install.sh --apply --profile personal should clear them, but it rewrites your live Pi settings, so I haven't run it.
+
+ Your uncommitted edits are still unstaged. There's also an existing autostash entry in git stash list that I didn't create and haven't touched.
+
+ Should I run ./install.sh --apply --profile personal now?
+
+Follow-up: "Yes, run ./install.sh --apply --profile personal." +2 more · shift+↑ open
+
+ Commit stage things and fix the Pi sub-agents stuff, you know, let's use the latest version, make sure it works. And also, let's clean up these scratch files and, yeah, remove the hard-coded paths also, like, make sure that they adapt to the
+ profile that we are.
